@@ -15,13 +15,14 @@ import struct
 # Variables
 wifiif = ["wlan0", "wlan1"]
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+hop_delay = 0.25
+collect_for_sec = 10
 
 # Globals
-#hopper = {}
-#pkthandler = {}
 chan = {}
 current_chan = {}
 startchanindex = -1
+stack = set()
 
 def checkroot():
  if os.getuid() == 0:
@@ -58,6 +59,7 @@ def startchhopper():
   hopper = threading.Thread(target=chhopper, args=(wif,))
   hopper.daemon = True
   hopper.start()
+  print("- [x] channel hopper started for " + wif + " with " + str(hop_delay) + "s delay")
 
 def chhopper(wif):
  global startchanindex
@@ -67,16 +69,17 @@ def chhopper(wif):
  while 1:
   for chanindex in range(local_startchanindex, len(channels), len(wifiif)):
    current_chan[wif] = str(channels[chanindex])
-   print(wif + " : " + current_chan[wif])
-   print("- change " + wif + " channel to " + str(channels[chanindex]))
+   #print(wif + " : " + current_chan[wif])
+   #print("- change " + wif + " channel to " + str(channels[chanindex]))
    os.system("iwconfig " + wif + " channel " + str(channels[chanindex]) + " > /dev/null 2>&1")
-   time.sleep(5)
+   time.sleep(hop_delay)
 
 def startpkthandler():
  for wif in wifiif:
   pkthandler = threading.Thread(target=pakethandler, args=(wif,))
   pkthandler.daemon = True
   pkthandler.start()
+  print("- [x] sniffer started for " + wif)
 
 def pakethandler(wif):
  rawSocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(0x0003))
@@ -97,6 +100,8 @@ def pakethandler(wif):
    subtype = frame_control[0]
    if subtype == 64:
     mac = wifi_header[3].encode('hex')
+    #print(wifi_header[2].encode('hex'))
+    #print(wifi_header[4].encode('hex'))
     ssid_lenght = pkt[0][paketpos:(paketpos + 2)]
     paketpos = paketpos + 2
     ssid_lenght = struct.unpack("!1B1B", ssid_lenght)
@@ -106,14 +111,16 @@ def pakethandler(wif):
      paketpos = paketpos + int(ssid_lenght)
     else:
      ssid = "NONE"
-    printprobe(wif,mac,ssid)
+    stackprobe(wif,mac,ssid)
 
-def printprobe(wif,mac,ssid):
+def stackprobe(wif,mac,ssid):
  request = urllib2.Request("https://macvendors.co/api/vendorname/" + mac, headers={'User-Agent' : 'API Browser'})
  response = urllib2.urlopen(request)
  vendor = response.read()
  vendor = vendor.decode("utf-8")
+ ssid = ssid.decode("utf-8").encode("utf-8")
  print("- [x] " + wif + ": chan " + current_chan[wif] + " -> " + mac + " (" + vendor + ") -> " + ssid)
+ stack.add(mac + ";" + ssid)
 
 def main():
  print("---------------------------------------")
@@ -153,12 +160,20 @@ def main():
  print("")
  print("--- starting channel hopping")
  startchhopper()
- print("- [x] channel hopping started")
  print("")
  print("--- starting sniffer")
  startpkthandler()
  while 1:
-  time.sleep(1)
+  print("")
+  print("--- (re)starting timer: " + str(collect_for_sec) + "s")
+  end_timer = time.time() + collect_for_sec
+  while time.time() < end_timer:
+   time.sleep(0.1)
+  global stack
+  for entry in stack:
+   print(entry[0:12])
+   print(entry[13:])
+  stack = set()
 
 if __name__ == "__main__":
  main()
