@@ -11,6 +11,7 @@ import socket
 import time
 import urllib2
 import struct
+import Queue
 
 # Variables
 wifiif = ["wlan0", "wlan1"]
@@ -22,7 +23,7 @@ collect_for_sec = 10
 chan = {}
 current_chan = {}
 startchanindex = -1
-stack = set()
+stack = Queue.Queue()
 
 def checkroot():
  if os.getuid() == 0:
@@ -120,11 +121,13 @@ def stackprobe(wif,mac,ssid):
  vendor = vendor.decode("utf-8")
  ssid = ssid.decode("utf-8").encode("utf-8")
  print("- [x] " + wif + ": chan " + current_chan[wif] + " -> " + mac + " (" + vendor + ") -> " + ssid)
- stack.add(mac + ";" + ssid)
+ item = (mac + ";" + ssid)
+ if not item in stack.queue:
+  stack.put(mac + ";" + ssid)
 
 def main():
  print("---------------------------------------")
- print("----- starting probetoinflux v0.2 -----")
+ print("----- starting probetoinflux v0.3 -----")
  print("---------------------------------------")
  print("")
  print("--- running system checks:")
@@ -170,10 +173,11 @@ def main():
   while time.time() < end_timer:
    time.sleep(0.1)
   global stack
-  for entry in stack:
+  while not stack.empty():
+   entry = stack.get()
    print(entry[0:12])
    print(entry[13:])
-  stack = set()
+   stack.task_done()
 
 if __name__ == "__main__":
  main()
