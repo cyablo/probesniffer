@@ -6,7 +6,9 @@ High-performance because I'm using RAW-sockets and custom packet parser instead 
 
 ### Install on fresh Raspbian Stretch lite: ###
 
+```
 sudo ap-get update && sudo apt-get install git python-pip
 sudo pip install python-wifi
+```
 
 CPU usage is about 30-40% average with 2 WiFi-Adapters on RasPi 1 set to Turbo mode (1 GHz) running Raspian Stretch lite.
