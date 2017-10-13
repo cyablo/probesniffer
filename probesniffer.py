@@ -126,9 +126,11 @@ def stackprobe(wif,mac,ssid):
   stack.put(mac + ";" + ssid)
 
 def main():
- print("---------------------------------------")
- print("----- starting probetoinflux v0.3 -----")
- print("---------------------------------------")
+ print(" _____            _                   _  ___  ___           ")
+ print("|  _  | ___  ___ | |_  ___  ___  ___ |_||  _||  _| ___  ___ ")
+ print("|   __||  _|| . || . || -_||_ -||   || ||  _||  _|| -_||  _|")
+ print("|__|   |_|  |___||___||___||___||_|_||_||_|  |_|  |___||_|  ")
+ print("(c) Daniel Wandrei - cyablo@cyablo.de")
  print("")
  print("--- running system checks:")
  if checkroot():
