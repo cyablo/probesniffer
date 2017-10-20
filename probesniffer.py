@@ -12,18 +12,37 @@ import time
 import urllib2
 import struct
 import Queue
+import pygelf
+import logging
+from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler, GelfHttpHandler
 
 # Variables
 wifiif = ["wlan0", "wlan1"]
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-hop_delay = 0.25
-collect_for_sec = 10
+#hop_delay = 0.25
+hop_delay = 1
+collect_for_sec = 300
+graylog_server = "192.168.1.20"
+graylog_port = 12201
 
 # Globals
 chan = {}
 current_chan = {}
 startchanindex = -1
 stack = Queue.Queue()
+
+class ContextFilter(logging.Filter):
+ def filter(self, record):
+  record.mac = gray_mac
+  record.vendor = gray_vendor
+  record.ssid = gray_ssid
+  return True
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+logger.addFilter(ContextFilter())
+handler = GelfTcpHandler(host=graylog_server, port=graylog_port, include_extra_fields=True)
+logger.addHandler(handler)
 
 def checkroot():
  if os.getuid() == 0:
@@ -115,12 +134,12 @@ def pakethandler(wif):
     stackprobe(wif,mac,ssid)
 
 def stackprobe(wif,mac,ssid):
- request = urllib2.Request("https://macvendors.co/api/vendorname/" + mac, headers={'User-Agent' : 'API Browser'})
- response = urllib2.urlopen(request)
- vendor = response.read()
- vendor = vendor.decode("utf-8")
+ #request = urllib2.Request("https://macvendors.co/api/vendorname/" + mac, headers={'User-Agent' : 'API Browser'})
+ #response = urllib2.urlopen(request)
+ #vendor = response.read()
+ #vendor = vendor.decode("utf-8")
  ssid = ssid.decode("utf-8").encode("utf-8")
- print("- [x] " + wif + ": chan " + current_chan[wif] + " -> " + mac + " (" + vendor + ") -> " + ssid)
+ #print("- [x] " + wif + ": chan " + current_chan[wif] + " -> " + mac + " (" + vendor + ") -> " + ssid)
  item = (mac + ";" + ssid)
  if not item in stack.queue:
   stack.put(mac + ";" + ssid)
@@ -177,8 +196,19 @@ def main():
   global stack
   while not stack.empty():
    entry = stack.get()
-   print(entry[0:12])
-   print(entry[13:])
+   global gray_mac
+   global gray_ssid
+   gray_mac = entry[0:12]
+   #print(entry[0:12])
+   request = urllib2.Request("https://macvendors.co/api/vendorname/" + gray_mac, headers={'User-Agent' : 'API Browser'})
+   response = urllib2.urlopen(request)
+   global gray_vendor
+   gray_vendor = response.read()
+   gray_vendor = gray_vendor.decode("utf-8")
+   #print(gray_vendor)
+   gray_ssid = entry[13:]
+   #print(entry[13:])
+   logging.info('Probe: ' + gray_mac + ' -> ' + gray_vendor + ' -> ' + gray_ssid)
    stack.task_done()
 
 if __name__ == "__main__":
