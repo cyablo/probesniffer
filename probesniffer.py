@@ -21,7 +21,7 @@ from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler, GelfHttpHandl
 wifiif = ['wlan0', 'wlan1']
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 hop_delay = 1
-collect_for_sec = 60
+collect_for_sec = 30
 graylog_server = '192.168.1.20'
 graylog_port = 12201
 
@@ -118,14 +118,15 @@ def pakethandler(wif):
             subtype = frame_control[0]
             if subtype == 64:
                 mac = wifi_header[0x0003].encode('hex')
-				# print(wifi_header[2].encode('hex'))
+                # print(wifi_header[2].encode('hex'))
                 # print(wifi_header[4].encode('hex'))
                 ssid_lenght = (pkt[0])[paketpos:paketpos + 2]
                 paketpos = paketpos + 2
                 ssid_lenght = struct.unpack('!1B1B', ssid_lenght)
                 ssid_lenght = ssid_lenght[1]
                 if ssid_lenght > 0:
-                    ssid = (pkt[0])[paketpos:paketpos + int(ssid_lenght)].decode('utf-8')
+                    ssid = (pkt[0])[paketpos:paketpos + int(ssid_lenght)]
+                    ssid = ssid.decode('utf-8', errors='ignore')
                     paketpos = paketpos + int(ssid_lenght)
                 else:
                     ssid = 'NONE'
@@ -195,10 +196,8 @@ def main():
             except:
                 gray_vendor = 'Error getting Vendor'
             gray_ssid = entry[13:]
-            print('Stack:')
             logging.info('Probe: ' + gray_mac + ' -> ' + gray_vendor + ' -> ' + gray_ssid)
             stack.task_done()
 
 if __name__ == '__main__':
     main()
-	
