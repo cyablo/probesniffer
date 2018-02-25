@@ -18,4 +18,4 @@ sudo pip install python-wifi pygelf
 
 CPU usage is about 30-40% average with 2 WiFi-Adapters on RasPi 1 set to Turbo mode (1 GHz) running Raspian Stretch lite.
 
-BTW: Try looking for Atheros AR9271 Chipset devices. There are pretty good and pretty cheap 2,4 GHz Adapters on Aliexpress but sadly the Firmware can't initialize more than 2 Devices at the same time. Ralink RT3572/RT3070 Chipset seems to be a good alternative because AR9271 is getting pretty rare.
+BTW: Try looking for Atheros AR9271 Chipset devices. There are pretty good and pretty cheap 2,4 GHz Adapters on Aliexpress but sadly the Firmware can't initialize more than 2 Devices at the same time (seems to be fixed meanwhile, got 3 Adapters working within Linux Mint). Ralink RT3572/RT3070 Chipset seems to be a good alternative because AR9271 is getting pretty rare.
